@@ -65,7 +65,8 @@ part_2 :: proc(input: string) -> int
   }
 
   result := 0
-  for loc_id in left {
+  for loc_id in left
+  {
     similarity := similarity_lookup[loc_id] or_else 0
     result += similarity * loc_id
   }
@@ -76,14 +77,16 @@ part_2 :: proc(input: string) -> int
 ////////////////////////////////////////
 
 @(test)
-test :: proc(t: ^testing.T) {
+test :: proc(t: ^testing.T)
+{
   sample :: #load("../input/01.sample", string)
 
   testing.expect_value(t, part_1(sample), 11)
   testing.expect_value(t, part_2(sample), 31)
 }
 
-main :: proc() {
+main :: proc()
+{
   input :: #load("../input/01.input", string)
 
   fmt.printfln("Part 1: %d", part_1(input))
