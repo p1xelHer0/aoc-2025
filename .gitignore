@@ -1,0 +1,18 @@
+# C/Odin
+**.out
+**.dSYM
+**.bin
+[0-2][0-9]
+
+# direnv
+.direnv
+
+# Janet
+jpm_tree
+**.tested
+
+# macOS
+.DS_Store
+
+# Advent of Code
+[0-2][0-9].input
