@@ -35,7 +35,7 @@ u64
 part_1(FILE *input)
 {
   u32 l, r;
-  while(fscanf(input, "%d   %d\n", &l, &r) != EOF)
+  while(fscanf_s(input, "%d   %d\n", &l, &r) != EOF)
   {
     add_input(&LEFT, l);
     add_input(&RIGHT, r);
@@ -55,6 +55,9 @@ part_1(FILE *input)
     result += abs(diff);
   }
 
+  LEFT.len = 0;
+  RIGHT.len = 0;
+
   return result;
 }
 
@@ -62,17 +65,23 @@ u64
 part_2(FILE *input)
 {
   u64 result = 0;
+
+  LEFT.len = 0;
+  RIGHT.len = 0;
+
   return result;
 }
 
 int
 main(int argc, char *argv[])
 {
+  FILE *sample_input;
+  FILE *input;
   char sample_file[] = "../input/01.sample";
   char input_file[] = "../input/01.input";
 
-  FILE *sample_input = fopen(sample_file, "r");
-  FILE *input = fopen(input_file, "r");
+  errno_t sample_res = fopen_s(&sample_input, sample_file, "r");
+  errno_t input_res = fopen_s(&input, input_file, "r");
 
   assert(part_1(sample_input) == 11);
   printf("part_1: %llu\n", part_1(input));

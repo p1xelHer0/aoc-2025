@@ -2,10 +2,11 @@
 **.out
 **.dSYM
 **.bin
+**.exe
+**.pdb
+**.ilk
+**.rdi
 [0-2][0-9]
-
-# direnv
-.direnv
 
 # Janet
 jpm_tree
