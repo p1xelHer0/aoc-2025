@@ -17,13 +17,13 @@ struct Buffer
 };
 
 void
-add_input(Buffer *inputs, u64 item)
+add_input(Buffer *buffer, item item)
 {
-  inputs->items[inputs->len++] = item;
+  buffer->items[buffer->len++] = item;
 }
 
 int
-cmp(const void *a, const void *b)
+cmp_item(const void *a, const void *b)
 {
   return *(item *)a - *(item *)b;
 }
@@ -32,62 +32,64 @@ global Buffer LEFT = {0};
 global Buffer RIGHT = {0};
 
 u64
-part_1(FILE *input)
+part_1(char file_path[])
 {
-  u32 l, r;
-  while(fscanf_s(input, "%d   %d\n", &l, &r) != EOF)
+  FILE *input = fopen(file_path, "r");
+  item l, r;
+  while(fscanf(input, "%d   %d\n", &l, &r) != EOF)
   {
     add_input(&LEFT, l);
     add_input(&RIGHT, r);
   }
-  assert(LEFT.len == RIGHT.len);
-
-  qsort(LEFT.items, LEFT.len, sizeof(u32), cmp);
-  qsort(RIGHT.items, RIGHT.len, sizeof(u32), cmp);
+  qsort(LEFT.items, LEFT.len, sizeof(item), cmp_item);
+  qsort(RIGHT.items, RIGHT.len, sizeof(item), cmp_item);
 
   u64 result = 0;
   i32 diff = 0;
-  for(int i = 0; i < LEFT.len; i++)
+  for(u64 i = 0; i < LEFT.len; i++)
   {
-    u32 l = LEFT.items[i];
-    u32 r = RIGHT.items[i];
+    item l = LEFT.items[i];
+    item r = RIGHT.items[i];
     diff = l - r;
-    result += abs(diff);
+    result += (u64)abs(diff);
   }
 
   LEFT.len = 0;
   RIGHT.len = 0;
-
+  fclose(input);
   return result;
 }
 
 u64
-part_2(FILE *input)
+part_2(char file_path[])
 {
+  FILE *input = fopen(file_path, "r");
+  item l, r;
+  while(fscanf(input, "%d   %d\n", &l, &r) != EOF)
+  {
+    add_input(&LEFT, l);
+    add_input(&RIGHT, r);
+  }
+
   u64 result = 0;
 
   LEFT.len = 0;
   RIGHT.len = 0;
-
+  fclose(input);
   return result;
 }
 
 int
 main(int argc, char *argv[])
 {
-  FILE *sample_input;
-  FILE *input;
   char sample_file[] = "../input/01.sample";
   char input_file[] = "../input/01.input";
 
-  errno_t sample_res = fopen_s(&sample_input, sample_file, "r");
-  errno_t input_res = fopen_s(&input, input_file, "r");
+  printf("part_1: %llu\n", part_1(input_file));
+  assert(part_1(sample_file) == 11);
 
-  assert(part_1(sample_input) == 11);
-  printf("part_1: %llu\n", part_1(input));
-
-  assert(part_2(sample_input) == 31);
-  printf("part_2: %llu\n", part_2(input));
+  printf("part_2: %llu\n", part_2(input_file));
+  assert(part_2(sample_file) == 31);
 
   return 0;
 }

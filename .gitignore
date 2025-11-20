@@ -12,6 +12,9 @@
 jpm_tree
 **.tested
 
+# direnv
+.direnv
+
 # macOS
 .DS_Store
 

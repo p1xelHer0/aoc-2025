@@ -22,7 +22,7 @@
 #  elif defined(__APPLE__) && defined(__MACH__)
 #    define OS_MAC 1
 #  else
-#    error Compiler/OS comobo not supported
+#    error Compiler/OS combo not supported
 #endif
 
 // MSVC
@@ -33,7 +33,7 @@
 #  if defined(_WIN32)
 #    define OS_WINDOWS 1
 #  else
-#    error Compiler/OS comobo not supported
+#    error Compiler/OS combo not supported
 #endif
 
 // GCC
@@ -44,7 +44,7 @@
 #  if defined(__gnu_linux__) || defined(__linux__)
 #    define OS_LINUX 1
 #  else
-#    error Compiler/OS comobo not supported
+#    error Compiler/OS combo not supported
 #  endif
 #endif
 
