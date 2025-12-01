@@ -9,15 +9,10 @@ import "core:unicode/utf8"
 part_1 :: proc(input: string) -> int
 {
   result := 0
-  dial := 50
   it := input
   for line in strings.split_lines_iterator(&it)
   {
-    dir := utf8.string_to_runes(line)[0]
-    rot, _ := strconv.parse_int(line[1:])
-    if dir == 'L' do rot = -rot
-    dial = (dial + rot) %% 100
-    if dial == 0 do result += 1
+    first := utf8.string_to_runes(line)[0]
   }
 
   return result
@@ -28,30 +23,10 @@ part_1 :: proc(input: string) -> int
 part_2 :: proc(input: string) -> int
 {
   result := 0
-  dial := 50
   it := input
   for line in strings.split_lines_iterator(&it)
   {
-    dir := utf8.string_to_runes(line)[0]
-    rot, _ := strconv.parse_int(line[1:])
-    // we rotated 1 lap or more - add them
-    result += rot / 100
-    /**/ if dir == 'L'
-    {
-      next_dial := (dial - rot) %% 100
-      // we rotated backwards but next_dial > dial - we passed 0 + handle 0 later
-      if next_dial > dial && dial != 0 do result += 1
-      dial = next_dial
-    }
-    else if dir == 'R'
-    {
-      next_dial := (dial + rot) %% 100
-      // we rotated forwards but next_dial < dial - we passed 0 + handle 0 later
-      if next_dial < dial && next_dial != 0 do result += 1
-      dial = next_dial
-    }
-    // handle 0
-    if dial == 0 do result += 1
+    first := utf8.string_to_runes(line)[0]
   }
 
   return result
@@ -61,12 +36,12 @@ part_2 :: proc(input: string) -> int
 
 main :: proc()
 {
-  input :: #load("../input/01.input", string)
-  sample :: #load("../input/01.sample", string)
+  input :: #load("../../input/02.input", string)
+  sample :: #load("../../input/02.sample", string)
 
   ////////////////////////////////////////
 
-  // very cute we'll how long this lasts
+  // very cute we'll see how long this lasts...
   fmt.println("\033[2J")
   p1_sample := part_1(sample)
   p1_sample_expected := 3
