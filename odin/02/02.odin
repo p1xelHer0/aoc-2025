@@ -4,15 +4,26 @@ import "core:fmt"
 import "core:os/os2"
 import "core:strconv"
 import "core:strings"
-import "core:unicode/utf8"
 
-part_1 :: proc(input: string) -> int
+part_1 :: proc(input: string) -> i64
 {
-  result := 0
-  it := input
-  for line in strings.split_lines_iterator(&it)
+  result: i64
+  it := input[:len(input) - 1] // fml holy shit strconv fails parse trailing \n :)
+  for line in strings.split(it, sep = ",")
   {
-    first := utf8.string_to_runes(line)[0]
+    splitted, splitted_err := strings.split(line, sep = "-"); if splitted_err != nil do fmt.printfln("split failed: %v", splitted_err)
+    l, l_ok := strconv.parse_i64_of_base(splitted[0], base = 10); if !l_ok do fmt.printfln("l parse failed: `%v`", splitted[0])
+    r, r_ok := strconv.parse_i64_of_base(splitted[1], base = 10); if !r_ok do fmt.printfln("r parse failed: `%v`", splitted[1])
+    for n in l ..= r
+    {
+      n_str := fmt.tprint(n)
+      n_str_len := len(n_str)
+      half := n_str_len / 2
+      if n_str_len %% 2 == 0 && n_str[:half] == n_str[half:]
+      {
+        result += n
+      }
+    }
   }
 
   return result
@@ -20,13 +31,20 @@ part_1 :: proc(input: string) -> int
 
 ////////////////////////////////////////
 
-part_2 :: proc(input: string) -> int
+part_2 :: proc(input: string) -> i64
 {
-  result := 0
-  it := input
-  for line in strings.split_lines_iterator(&it)
+  result: i64
+  it := input[:len(input) - 1] // again
+  for line in strings.split(it, sep = ",")
   {
-    first := utf8.string_to_runes(line)[0]
+    splitted, splitted_err := strings.split(line, sep = "-"); if splitted_err != nil do fmt.printfln("split failed: %v", splitted_err)
+    l, l_ok := strconv.parse_i64_of_base(splitted[0], base = 10); if !l_ok do fmt.printfln("l parse failed: `%v`", splitted[0])
+    r, r_ok := strconv.parse_i64_of_base(splitted[1], base = 10); if !r_ok do fmt.printfln("r parse failed: `%v`", splitted[1])
+    for n in l ..= r
+    {
+      n_str := fmt.tprint(n)
+      n_str_len := len(n_str)
+    }
   }
 
   return result
@@ -44,7 +62,7 @@ main :: proc()
   // very cute we'll see how long this lasts...
   fmt.println("\033[2J")
   p1_sample := part_1(sample)
-  p1_sample_expected := 3
+  p1_sample_expected: i64 = 1227775554
   fmt.printf("\033[34;1;1m// p1\033[0m -> %v == %v", p1_sample, p1_sample_expected)
   if p1_sample == p1_sample_expected
   {
@@ -59,25 +77,28 @@ main :: proc()
 
   ////////////////////////////////////////
 
-  p2_sample := part_2(sample)
-  p2_sample_expected := 6
-  fmt.printf("\n\033[31;1;1m// p2\033[0m -> %v == %v", p2_sample, p2_sample_expected)
-  if p2_sample == p2_sample_expected
+  if p1_sample == p1_sample_expected
   {
-    part_2_result := part_2(input)
-    fmt.printf(" -> \033[31;1;4m%v\033[0m\n", part_2_result)
-    copy_to_clipboard(part_2_result)
-  }
-  else
-  {
-    fmt.print("\n")
+    p2_sample := part_2(sample)
+    p2_sample_expected: i64 = 4174379265
+    fmt.printf("\n\033[31;1;1m// p2\033[0m -> %v == %v", p2_sample, p2_sample_expected)
+    if p2_sample == p2_sample_expected
+    {
+      part_2_result := part_2(input)
+      fmt.printf(" -> \033[31;1;4m%v\033[0m\n", part_2_result)
+      copy_to_clipboard(part_2_result)
+    }
+    else
+    {
+      fmt.print("\n")
+    }
   }
 }
 
 ////////////////////////////////////////
 
 // lmao
-copy_to_clipboard :: proc(result: int)
+copy_to_clipboard :: proc(value: any)
 {
   r, w, err := os2.pipe()
   pbcopy_process_desc := os2.Process_Desc {
@@ -85,7 +106,7 @@ copy_to_clipboard :: proc(result: int)
     stdin = r,
   }
   echo_process_desc := os2.Process_Desc {
-    command = { "echo", fmt.tprintf("%v", result) },
+    command = { "echo", fmt.tprint(value) },
     stdout = w,
   }
 
