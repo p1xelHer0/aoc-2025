@@ -102,7 +102,7 @@ main :: proc()
 ////////////////////////////////////////
 
 // lmao
-copy_to_clipboard :: proc(result: int)
+copy_to_clipboard :: proc(value: any)
 {
   r, w, err := os2.pipe()
   pbcopy_process_desc := os2.Process_Desc {
@@ -110,7 +110,7 @@ copy_to_clipboard :: proc(result: int)
     stdin = r,
   }
   echo_process_desc := os2.Process_Desc {
-    command = { "echo", fmt.tprintf("%v", result) },
+    command = { "echo", fmt.tprint(value) },
     stdout = w,
   }
 
