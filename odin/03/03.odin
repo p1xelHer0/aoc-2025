@@ -4,6 +4,7 @@ package aoc
 import "core:fmt"
 import "core:os/os2"
 import "core:strconv"
+import "core:slice"
 import "core:strings"
 
 // find the earliest largest number
@@ -45,14 +46,14 @@ part_1 :: proc(input: string) -> u64
 
 ////////////////////////////////////////
 
-part_2 :: proc(input: string) -> u64
+part_2_oude :: proc(input: string) -> u64
 {
   context.allocator = context.temp_allocator
   result: u64
   trimmed_input := strings.trim(input, "\n")
   for line in strings.split_lines(trimmed_input)
   {
-    val, idx := find_max(line[:len(line)-(12-1)])
+    val, idx := find_max(line[:len(line)-11])
     for i in 1 ..< 12
     {
       // don't look for the same digit again
@@ -65,6 +66,31 @@ part_2 :: proc(input: string) -> u64
       val = val * 10 + val_next
     }
     result += u64(val)
+  }
+  return result
+}
+
+// trying out `transmute` and `slice.max_index`
+// Uncle B*b in shambles but AoC code should transmute and
+// do shit like `int(u8-'0')`
+part_2 :: proc(input: string) -> u64
+{
+  context.allocator = context.temp_allocator
+  result: u64
+  trimmed_input := strings.trim(input, "\n")
+  for line in strings.split_lines(trimmed_input)
+  {
+    digits := transmute([]u8)line
+    idx := slice.max_index(digits[:len(digits)-11]) or_continue
+    n := u64(digits[idx]-'0')
+    for i in 1 ..< 12
+    {
+      idx += 1
+      idx_next := slice.max_index(digits[idx:len(digits)-(11-i)]) or_continue
+      idx = idx + idx_next
+      n = n * 10 + u64(digits[idx]-'0')
+    }
+    result += n
   }
   return result
 }
