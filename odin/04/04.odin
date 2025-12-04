@@ -1,29 +1,114 @@
 package aoc
 
+// [base]
+import "base:runtime"
+
 // [core]
 import "core:fmt"
 import "core:os/os2"
-import "core:strconv"
-import "core:slice"
 import "core:strings"
 
+////////////////////////////////////////
 
+neighbours := [8][2]int {
+  {-1, -1}, {0, -1}, {1, -1},
+  {-1,  0},          {1,  0},
+  {-1,  1}, {0,  1}, {1,  1},
+}
 
-part_1 :: proc(input: string) -> u64
+////////////////////////////////////////
+
+part_1 :: proc(input: string) -> int
 {
   context.allocator = context.temp_allocator
-  result: u64
+  result := 0
+  lines := strings.split_lines(strings.trim(input, "\n"))
+  w := len(lines[0]) // all lines are the same width
+  h := len(lines)
+  paper := make(map[[2]int]bool, w * h)
+  for x in 0 ..< w
+  {
+    for y in 0 ..< h
+    {
+      if lines[y][x] == '@'
+      {
+        paper[{x, y}] = true
+      }
+    }
+  }
+  for p in paper
+  {
+    roll := 0
+    for n in neighbours
+    {
+      if paper[p+n]
+      {
+        roll += 1
+      }
+    }
+    if roll < 4
+    {
+      result += 1
+    }
+  }
   return result
 }
 
 ////////////////////////////////////////
 
-part_2 :: proc(input: string) -> u64
+part_2 :: proc(input: string) -> int
 {
   context.allocator = context.temp_allocator
-  result: u64
+  result := 0
+  lines := strings.split_lines(strings.trim(input, "\n"))
+  w := len(lines[0]) // all lines are the same width
+  h := len(lines)
+  paper := make(map[[2]int]bool, w * h)
+  for x in 0 ..< w
+  {
+    for y in 0 ..< h
+    {
+      if lines[y][x] == '@'
+      {
+        paper[{x, y}] = true
+      }
+    }
+  }
+  kinda_part_1 :: proc(paper: ^map[[2]int]bool) -> int
+  {
+    result := 0
+    removed := make([dynamic][2]int)
+    for p in paper
+    {
+      roll := 0
+      for n in neighbours
+      {
+        if paper[p+n]
+        {
+          roll += 1
+        }
+      }
+      if roll < 4
+      {
+        result += 1
+        append(&removed, p)
+      }
+    }
+    for r in removed
+    {
+      paper[r] = false
+    }
+    return result
+  }
+  for
+  {
+    current_result := kinda_part_1(&paper)
+    if current_result == result do break
+    result = current_result
+  }
   return result
 }
+
 
 ////////////////////////////////////////
 
@@ -37,7 +122,7 @@ main :: proc()
   // very cute we'll see how long this lasts...
   fmt.println("\033[2J")
   p1_sample := part_1(sample)
-  p1_sample_expected: u64 = 357
+  p1_sample_expected := 13
   fmt.printf("\033[34;1;1m// p1\033[0m -> %v\n      == %v", p1_sample, p1_sample_expected)
   if p1_sample == p1_sample_expected
   {
@@ -55,7 +140,7 @@ main :: proc()
   if p1_sample == p1_sample_expected
   {
     p2_sample := part_2(sample)
-    p2_sample_expected: u64 = 3121910778619
+    p2_sample_expected := 43
     fmt.printf("\n\033[31;1;1m// p2\033[0m -> %v\n      == %v", p2_sample, p2_sample_expected)
     if p2_sample == p2_sample_expected
     {
@@ -100,4 +185,5 @@ copy_to_clipboard :: proc(value: any)
   err = os2.process_close(pbcopy_process)
 }
 
-p :: fmt.printfln
+_p :: fmt.println
+_pf :: fmt.printfln
