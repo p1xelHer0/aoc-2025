@@ -14,12 +14,12 @@ part_1 :: proc(input: string) -> int
 {
   context.allocator = context.temp_allocator
   lines := str.split_lines(str.trim(input, "\n"))
-  beams: map[int]bool
+  beams: map[int]struct{}
   for c, idx in lines[0]
   {
     if c == 'S'
     {
-      beams[idx] = true
+      beams[idx] = {}
       break
     }
   }
@@ -30,12 +30,12 @@ part_1 :: proc(input: string) -> int
     {
       if c == '^'
       {
-        if beams[idx]
+        if idx in beams
         {
           result += 1
-          beams[idx] = false
-          beams[idx+1] = true
-          beams[idx-1] = true
+          delete_key(&beams, idx)
+          beams[idx+1] = {}
+          beams[idx-1] = {}
         }
       }
     }
