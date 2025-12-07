@@ -45,8 +45,55 @@ part_1 :: proc(input: string) -> int
 
 ////////////////////////////////////////
 
-part_2 :: proc(input: string) -> int {
-  return 0
+part_2 :: proc(input: string) -> int
+{
+  context.allocator = context.temp_allocator
+  lines := str.split_lines(str.trim(input, "\n"))
+  start: [2]int
+  for c, idx in lines[0]
+  {
+    if c == 'S'
+    {
+      start = {idx, 0}
+      break
+    }
+  }
+  // chat can we do better than this? creating a fully zeroed [][]int w * h?
+  _memo: [dynamic][]int
+  w := len(lines[0])
+  h := len(lines)
+  for y in 0 ..< h
+  {
+    row := make([dynamic]int, w)
+    append(&_memo, row[:])
+  }
+  memo := _memo[:]
+  solve :: proc(x, y: int, lines: []string, memo: ^[][]int) -> int
+  {
+    // base case: we reached to bottom
+    if y >= len(lines)
+    {
+      return 1
+    }
+    else
+    {
+      // use memoized result
+      // it's kinda slow without this :)
+      if memo[y][x] == 0
+      {
+        if lines[y][x] == '^' // split
+        {
+          memo[y][x] = solve(x+1, y+1, lines, memo) + solve(x-1, y+1, lines, memo)
+        }
+        else // keep doing down
+        {
+          memo[y][x] = solve(x, y+1, lines, memo)
+        }
+      }
+      return memo[y][x]
+    }
+  }
+  return solve(start.x, start.y, lines, &memo)
 }
 
 ////////////////////////////////////////
@@ -79,7 +126,7 @@ main :: proc()
   if p1_sample == p1_sample_expected
   {
     p2_sample := part_2(sample)
-    p2_sample_expected := 14
+    p2_sample_expected := 40
     fmt.printf("\n\033[31;1;1m// p2\033[0m -> %v\n      == %v", p2_sample, p2_sample_expected)
     if p2_sample == p2_sample_expected
     {
