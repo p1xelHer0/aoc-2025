@@ -6,7 +6,10 @@
 **.pdb
 **.ilk
 **.rdi
-[0-2][0-9]/[0-2][0-9]
+
+# Zig
+**/.zig-out/
+**/.zig-cache/
 
 # Janet
 jpm_tree
@@ -20,3 +23,4 @@ jpm_tree
 
 # Advent of Code
 [0-2][0-9].input
+[0-2][0-9]/[0-2][0-9]
