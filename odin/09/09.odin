@@ -13,96 +13,14 @@ import str "core:strings"
 
 ////////////////////////////////////////
 
-DSU :: struct($T: typeid)
-{
-  parent, set_len, set_rank: []int,
-  len:                       int,
-}
-
-dsu_init :: proc(dsu: ^$D/DSU($T), size: int, allocator := context.allocator, loc := #caller_location)
-{
-  dsu.parent = make([]int, size, allocator)
-  dsu.set_len = make([]int, size, allocator)
-  for i in 0 ..< size
-  {
-    dsu.parent[i] = i
-    dsu.set_len[i] = 1
-  }
-  dsu.len = size
-}
-
-dsu_find :: proc(dsu: ^$D/DSU($T), elem: int) -> int
-{
-  elem := elem
-  root := elem
-  elem_idx := dsu.parent[elem]
-  for root != dsu.parent[elem_idx]
-  {
-    root = dsu.parent[root]
-  }
-  for elem != root
-  {
-    next := dsu.parent[elem]
-    dsu.parent[elem] = root
-    elem = next
-  }
-  return root
-}
-
-dsu_union :: proc(dsu: ^$D/DSU($T), a: int, b: int) -> bool
-{
-  if dsu_find(dsu, a) != dsu_find(dsu, b)
-  {
-    if dsu.set_len[a] < dsu.set_len[b]
-    {
-      dsu.set_len[b] += dsu.set_len[a]
-      dsu.parent[a] = dsu.parent[b]
-      dsu.set_len[a] = 0
-    }
-    else
-    {
-      dsu.set_len[a] += dsu.set_len[b]
-      dsu.parent[b] = dsu.parent[a]
-      dsu.set_len[b] = 0
-    }
-    dsu.len -= 1
-    return true
-  }
-  return false
-}
-
-dsu_elem_len :: proc(dsu: ^$D/DSU($T), elem: T) -> int
-{
-  return dsu.set_len[dsu_find(dsu, elem)]
-}
-
-dsu_len :: proc(dsu: ^$D/DSU($T)) -> int
-{
-  return dsu.len
-}
-
-////////////////////////////////////////
-
-Box :: struct
-{
-  dist: f64,
-  p1_idx: int,
-  p2_idx: int,
-}
-
-distance :: proc(point: [3]int) -> f64
-{
-  return math.sqrt(f64(point.x * point.x + point.y * point.y + point.z * point.z))
-}
-
 part_1 :: proc(input: string, limit: int) -> int
 {
   context.allocator = context.temp_allocator
   lines := str.split_lines(str.trim(input, "\n"))
-  points: [dynamic][3]int
+  points: [dynamic][2]int
   for line in lines
   {
-    point: [3]int
+    point: [2]int
     for s, idx in str.split(line, sep = ",")
     {
       val, val_ok := strconv.parse_int(s); if !val_ok do _epf("failed to parse_int %v in line %v", s, line)
@@ -110,57 +28,87 @@ part_1 :: proc(input: string, limit: int) -> int
     }
     append(&points, point)
   }
-  box_pairs: [dynamic]Box
-  for p1, i in points
+  result := 0
+  for p1 in points
   {
-    for p2, j in points
+    for p2 in points
     {
-      if p1 == p2 do continue
-      dist := distance(p2-p1)
-      append(&box_pairs, Box{dist, i, j})
+      if p1 == p2
+      {
+        continue
+      }
+      dist := p2 - p1
+      area := (abs(dist.x) + 1) * (abs(dist.y) + 1)
+      result = max(result, area)
     }
   }
-  slice.sort_by(box_pairs[:], proc(b1, b2: Box) -> bool { return b1.dist < b2.dist })
-  dsu: DSU([3]int)
-  dsu_init(&dsu, len(points))
-  limit := limit
-  for i in 0..<limit
-  {
-    p1 := box_pairs[i].p1_idx
-    p2 := box_pairs[i].p2_idx
-    did_union := dsu_union(&dsu, p1, p2)
-    if !did_union
-    {
-      limit += 1
-    }
-  }
-  lengths := slice.clone(dsu.set_len[:])
-  slice.sort_by(lengths, proc(a, b: int) -> bool { return a > b })
-  _p(lengths)
-  result := math.prod(lengths[:3])
   return result
 }
 
 ////////////////////////////////////////
 
+Node :: struct
+{
+  dist: [2]int,
+  p1_idx: int,
+  p2_idx: int,
+}
+
 part_2 :: proc(input: string) -> int
 {
-  return 0
+  context.allocator = context.temp_allocator
+  lines := str.split_lines(str.trim(input, "\n"))
+  points: [dynamic][2]int
+  for line in lines
+  {
+    point: [2]int
+    for s, idx in str.split(line, sep = ",")
+    {
+      val, val_ok := strconv.parse_int(s); if !val_ok do _epf("failed to parse_int %v in line %v", s, line)
+      point[idx] = val
+    }
+    append(&points, point)
+  }
+  distances: [dynamic]Node
+  for p1, i in points
+  {
+    for p2, j in points
+    {
+      if p1 == p2
+      {
+        continue
+      }
+      dist := p2 - p1
+      x := abs(dist.x) + 1
+      y := abs(dist.y) + 1
+      node := Node {
+        dist = [2]int{x, y},
+        p1_idx = i,
+        p2_idx = j,
+      }
+      append_elem(&distances, node)
+    }
+  }
+  // largest area first
+  slice.sort_by(distances[:], proc(a, b: Node) -> bool { return a.dist.x * a.dist.y > b.dist.x * b.dist.y })
+  result := (distances[0].dist.x) * (distances[0].dist.y)
+  return result
+
 }
 
 ////////////////////////////////////////
 
 main :: proc()
 {
-  input :: #load("../../input/08.input", string)
-  sample :: #load("../../input/08.sample", string)
+  input :: #load("../../input/09.input", string)
+  sample :: #load("../../input/09.sample", string)
 
   ////////////////////////////////////////
 
   // very cute we'll see how long this lasts...
   fmt.println("\033[2J")
   p1_sample := part_1(sample, 10)
-  p1_sample_expected := 40
+  p1_sample_expected := 50
   fmt.printf("\033[34;1;1m// p1\033[0m -> %v\n      == %v", p1_sample, p1_sample_expected)
   if p1_sample == p1_sample_expected
   {
@@ -178,7 +126,7 @@ main :: proc()
   if p1_sample == p1_sample_expected
   {
     p2_sample := part_2(sample)
-    p2_sample_expected := 1337
+    p2_sample_expected := 24
     fmt.printf("\n\033[31;1;1m// p2\033[0m -> %v\n      == %v", p2_sample, p2_sample_expected)
     if p2_sample == p2_sample_expected
     {
