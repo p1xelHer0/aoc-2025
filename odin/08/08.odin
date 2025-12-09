@@ -13,86 +13,71 @@ import str "core:strings"
 
 ////////////////////////////////////////
 
-DSU :: struct($T: typeid)
+Union_Find :: struct
 {
-  parent, set_len, set_rank: []int,
-  len:                       int,
+  parent, set_len: []int,
+  len:             int,
 }
 
-dsu_init :: proc(dsu: ^$D/DSU($T), size: int, allocator := context.allocator, loc := #caller_location)
+uf_init :: proc(uf: ^$U/Union_Find, size: int, allocator := context.allocator, loc := #caller_location)
 {
-  dsu.parent = make([]int, size, allocator)
-  dsu.set_len = make([]int, size, allocator)
+  uf.parent = make([]int, size, allocator)
+  uf.set_len = make([]int, size, allocator)
   for i in 0 ..< size
   {
-    dsu.parent[i] = i
-    dsu.set_len[i] = 1
+    uf.parent[i] = i
+    uf.set_len[i] = 1
   }
-  dsu.len = size
+  uf.len = size
 }
 
-dsu_find :: proc(dsu: ^$D/DSU($T), elem: int) -> int
+uf_find :: proc(uf: ^$U/Union_Find, i: int) -> int
 {
-  elem := elem
-  root := elem
-  elem_idx := dsu.parent[elem]
-  for root != dsu.parent[elem_idx]
+  if i == uf.parent[i]
   {
-    root = dsu.parent[root]
+    return i
   }
-  for elem != root
+  uf.parent[i] = uf_find(uf, uf.parent[i])
+  return uf.parent[i]
+}
+
+uf_same_set :: proc(uf: ^$U/Union_Find, i, j: int) -> bool
+{
+  return uf_find(uf, i) == uf_find(uf, j)
+}
+
+uf_union :: proc(uf: ^$U/Union_Find, i, j: int) -> bool
+{
+  if uf_same_set(uf, i, j) do return false
+  i := uf_find(uf, i)
+  j := uf_find(uf, j)
+  if uf.set_len[i] < uf.set_len[j]
   {
-    next := dsu.parent[elem]
-    dsu.parent[elem] = root
-    elem = next
+    uf.set_len[j] += uf.set_len[i]
+    uf.parent[i] = j
+    uf.set_len[i] = 0
   }
-  return root
-}
-
-dsu_union :: proc(dsu: ^$D/DSU($T), a: int, b: int) -> bool
-{
-  if dsu_find(dsu, a) != dsu_find(dsu, b)
+  else
   {
-    if dsu.set_len[a] < dsu.set_len[b]
-    {
-      dsu.set_len[b] += dsu.set_len[a]
-      dsu.parent[a] = dsu.parent[b]
-      dsu.set_len[a] = 0
-    }
-    else
-    {
-      dsu.set_len[a] += dsu.set_len[b]
-      dsu.parent[b] = dsu.parent[a]
-      dsu.set_len[b] = 0
-    }
-    dsu.len -= 1
-    return true
+    uf.set_len[i] += uf.set_len[j]
+    uf.parent[j] = i
+    uf.set_len[j] = 0
   }
-  return false
-}
-
-dsu_elem_len :: proc(dsu: ^$D/DSU($T), elem: T) -> int
-{
-  return dsu.set_len[dsu_find(dsu, elem)]
-}
-
-dsu_len :: proc(dsu: ^$D/DSU($T)) -> int
-{
-  return dsu.len
+  uf.len -= 1
+  return true
 }
 
 ////////////////////////////////////////
 
-Box :: struct
+Distance :: struct
 {
-  dist: f64,
-  p1_idx: int,
-  p2_idx: int,
+  dist:   f32,
+  p1, p2: int,
 }
 
-distance :: proc(point: [3]int) -> f64
+distance :: proc(point: [3]int) -> f32
 {
-  return math.sqrt(f64(point.x * point.x + point.y * point.y + point.z * point.z))
+  return math.sqrt(f32(point.x * point.x + point.y * point.y + point.z * point.z))
 }
 
 part_1 :: proc(input: string, limit: int) -> int
@@ -110,34 +95,28 @@ part_1 :: proc(input: string, limit: int) -> int
     }
     append(&points, point)
   }
-  box_pairs: [dynamic]Box
+  distances: [dynamic]Distance
   for p1, i in points
   {
-    for p2, j in points
+    // skip "mirrored" pair
+    for p2, j in points[i+1:]
     {
       if p1 == p2 do continue
       dist := distance(p2-p1)
-      append(&box_pairs, Box{dist, i, j})
+      append(&distances, Distance{dist, i, j+i+1})
     }
   }
-  slice.sort_by(box_pairs[:], proc(b1, b2: Box) -> bool { return b1.dist < b2.dist })
-  dsu: DSU([3]int)
-  dsu_init(&dsu, len(points))
-  limit := limit
-  for i in 0..<limit
+  slice.sort_by(distances[:], proc(i, j: Distance) -> bool { return i.dist < j.dist })
+  uf: Union_Find
+  uf_init(&uf, len(points))
+  for idx in 0..<limit
   {
-    p1 := box_pairs[i].p1_idx
-    p2 := box_pairs[i].p2_idx
-    did_union := dsu_union(&dsu, p1, p2)
-    if !did_union
-    {
-      limit += 1
-    }
+    d := distances[idx]
+    uf_union(&uf, d.p1, d.p2) or_continue
   }
-  lengths := slice.clone(dsu.set_len[:])
-  slice.sort_by(lengths, proc(a, b: int) -> bool { return a > b })
-  _p(lengths)
-  result := math.prod(lengths[:3])
+  lens := slice.clone(uf.set_len[:])
+  slice.sort_by(lens, proc(i, j: int) -> bool { return i > j })
+  result := math.prod(lens[:3])
   return result
 }
 
@@ -145,7 +124,44 @@ part_1 :: proc(input: string, limit: int) -> int
 
 part_2 :: proc(input: string) -> int
 {
-  return 0
+  context.allocator = context.temp_allocator
+  lines := str.split_lines(str.trim(input, "\n"))
+  points: [dynamic][3]int
+  for line in lines
+  {
+    point: [3]int
+    for s, idx in str.split(line, sep = ",")
+    {
+      val, val_ok := strconv.parse_int(s); if !val_ok do _epf("failed to parse_int %v in line %v", s, line)
+      point[idx] = val
+    }
+    append(&points, point)
+  }
+  distances: [dynamic]Distance
+  for p1, i in points
+  {
+    // skip "mirrored" pair
+    for p2, j in points[i+1:]
+    {
+      if p1 == p2 do continue
+      dist := distance(p2-p1)
+      append(&distances, Distance{dist, i, j+i+1})
+    }
+  }
+  slice.sort_by(distances[:], proc(i, j: Distance) -> bool { return i.dist < j.dist })
+  uf: Union_Find
+  uf_init(&uf, len(points))
+  idx := 0
+  d: Distance
+  for uf.len > 1
+  {
+    defer idx += 1
+    d = distances[idx]
+    uf_union(&uf, d.p1, d.p2) or_continue
+  }
+  result := points[d.p1].x * points[d.p2].x
+  return result
+
 }
 
 ////////////////////////////////////////
@@ -178,7 +194,7 @@ main :: proc()
   if p1_sample == p1_sample_expected
   {
     p2_sample := part_2(sample)
-    p2_sample_expected := 1337
+    p2_sample_expected := 25272
     fmt.printf("\n\033[31;1;1m// p2\033[0m -> %v\n      == %v", p2_sample, p2_sample_expected)
     if p2_sample == p2_sample_expected
     {
