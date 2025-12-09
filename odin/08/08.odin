@@ -13,11 +13,70 @@ import str "core:strings"
 
 ////////////////////////////////////////
 
+DEFAULT_CAPACITY :: 10
+
+DSU :: struct($T: typeid)
+{
+  parent: [dynamic]T,
+  idx: map[T]int,
+  len: [dynamic]int,
+}
+
+dsu_len :: proc(dsu: ^$D/DSU($T)) -> int
+{
+  len: int
+  for k, v in dsu.len
+  {
+    len += v
+  }
+  return len
+}
+
+dsu_init :: proc(dsu: ^$D/DSU($T), elem: T, capacity := DEFAULT_CAPACITY, allocator := context.allocator, loc := #caller_location)
+{
+  idx := 1
+  dsu.idx[elem] = idx
+  dsu.parent = make_dynamic_array_len([dynamic]T, capacity, allocator)
+  dsu.parent[idx] = elem
+  dsu.len = make_dynamic_array_len([dynamic]int, capacity, allocator)
+  dsu.len[idx] = 1
+}
+
+dsu_find :: proc(dsu: ^$D/DSU($T), elem: T) -> T
+{
+  idx := dsu.idx[elem]
+  if elem == dsu.parent[idx] do return elem
+  elem_next := dsu_find(dsu, dsu.parent[idx])
+  dsu.parent[idx] = elem_next
+  return elem_next
+}
+
+dsu_union :: proc(dsu: ^$D/DSU($T), a: T, b: T) -> bool
+{
+  a := dsu_find(dsu, a)
+  a_idx := dsu.idx[a]
+  b := dsu_find(dsu, b)
+  b_idx := dsu.idx[b]
+  if a != b
+  {
+    if dsu.len[a_idx] < dsu.len[b_idx]
+    {
+      dsu.parent[a_idx], dsu.len[a_idx], dsu.parent[b_idx], dsu.len[b_idx] = dsu.parent[b_idx], dsu.len[b_idx], dsu.parent[a_idx], dsu.len[a_idx]
+    }
+    dsu.parent[b_idx] = a
+    dsu.len[a_idx] += dsu.len[b_idx]
+    return true
+  }
+  return false
+}
+
+////////////////////////////////////////
+
 Box :: struct
 {
   dist: f64,
-  p1: [3]int,
-  p2: [3]int,
+  p1_idx: int,
+  p2_idx: int,
 }
 
 distance :: proc(point: [3]int) -> f64
@@ -47,10 +106,19 @@ part_1 :: proc(input: string, limit: int) -> int
     {
       if p1 == p2 do continue
       dist := distance(p2-p1)
-      append(&box_pairs, Box{dist, p1, p2})
+      append(&box_pairs, Box{dist, i, j})
     }
   }
   slice.sort_by(box_pairs[:], proc(b1, b2: Box) -> bool { return b1.dist < b2.dist })
+  dsu: DSU([3]int)
+  p1 := points[box_pairs[0].p1_idx]
+  p2 := points[box_pairs[0].p2_idx]
+  _p(p1)
+  _p(p2)
+  dsu_init(&dsu, p1)
+  dsu_union(&dsu, p1, p2)
+  _p(dsu)
+
   result := 0
   return result
 }
