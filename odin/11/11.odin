@@ -1,5 +1,6 @@
 package aoc
 
+import "core:math"
 // [base]
 import "base:runtime"
 
@@ -19,23 +20,22 @@ part_1 :: proc(input: string) -> int
   {
     s := str.split(line, ": ")
     id := s[0]
-    outputs := str.fields(s[1])
-    devices[id] = outputs
+    devices[id] = str.fields(s[1])
   }
-  solve :: proc(id: string, devices: map[string][]string, visits: ^map[string]int)
+  solve :: proc(from, to: string, devices: map[string][]string, visits: ^map[string]int)
   {
-    visits[id] += 1
-    if id == "out"
+    visits[from] += 1
+    if from == to
     {
       return
     }
-    for device in devices[id]
+    for device in devices[from]
     {
-      solve(device, devices, visits)
+      solve(device, to, devices, visits)
     }
   }
   visits := make(map[string]int)
-  solve("you", devices, &visits)
+  solve("you", "out", devices, &visits)
   result := visits["out"]
   return result
 }
@@ -51,45 +51,37 @@ part_2 :: proc(input: string) -> int
   {
     s := str.split(line, ": ")
     id := s[0]
-    outputs := str.fields(s[1])
-    devices[id] = outputs
+    devices[id] = str.fields(s[1])
   }
-  solve :: proc(from, to: string, devices: map[string][]string, visits: ^map[string]int)
+  solve :: proc(from, to: string, devices: map[string][]string, memo: ^map[[2]string]int) -> int
   {
-    visits[from] += 1
     if from == to
     {
-      return
+      return 1
     }
-    for device in devices[from]
+    path := [2]string{from, to}
+    if path in memo
     {
-      solve(device, to, devices, visits)
+      return memo[path]
     }
+    results := make([dynamic]int, len(devices))
+    for from_next in devices[from] {
+      result := solve(from_next, to, devices, memo)
+      memo[{from_next, to}] = result
+      append(&results, result)
+    }
+    return math.sum(results[:])
   }
-  visits := make(map[string]int)
-  solve("svr", "dac", devices, &visits)
-  step_1_a := visits["dac"]
-  clear(&visits)
-  solve("dac", "fft", devices, &visits)
-  step_2_a := visits["fft"]
-  clear(&visits)
-  solve("fft", "out", devices, &visits)
-  step_3_a := visits["out"]
-  clear(&visits)
-  a := step_1_a * step_2_a  * step_3_a
+  memo := make(map[[2]string]int)
+  a1 := solve("svr", "dac", devices, &memo)
+  a2 := solve("dac", "fft", devices, &memo)
+  a3 := solve("fft", "out", devices, &memo)
 
-  solve("svr", "fft", devices, &visits)
-  step_1_b := visits["fft"]
-  clear(&visits)
-  solve("fft", "dac", devices, &visits)
-  step_2_b := visits["dac"]
-  clear(&visits)
-  solve("dac", "out", devices, &visits)
-  step_3_b := visits["out"]
-  clear(&visits)
-  b := step_1_b * step_2_b * step_3_b
+  b1 := solve("svr", "fft", devices, &memo)
+  b2 := solve("fft", "dac", devices, &memo)
+  b3 := solve("dac", "out", devices, &memo)
 
-  return a + b
+  return (a1 * a2 * a3) + (b1 * b2 * b3)
 }
 
 ////////////////////////////////////////
